@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useField } from 'formik';
 
 type Language = {
@@ -17,6 +17,8 @@ const LanguageSelect: React.FC<Props> = ({ label, name, options }) => {
   const [field, meta, helpers] = useField(name);
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [openUpward, setOpenUpward] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find(opt => opt.id === field.value);
 
@@ -30,10 +32,28 @@ const LanguageSelect: React.FC<Props> = ({ label, name, options }) => {
     setSearchTerm('');
   };
 
+  const checkDropdownPosition = () => {
+    const dropdown = dropdownRef.current;
+    if (!dropdown) return;
+
+    const rect = dropdown.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    // If less than 200px below and more above, open upward
+    setOpenUpward(spaceBelow < 200 && spaceAbove > 200);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      checkDropdownPosition();
+    }
+  }, [isOpen]);
+
   return (
-    <div className="relative w-72">
+    <div className="relative w-72" ref={dropdownRef}>
       {label && <label className="block mb-1 text-sm font-medium">{label}</label>}
-      
+
       <div
         className={`border px-4 py-2 rounded-lg cursor-pointer bg-white ${
           meta.touched && meta.error ? 'border-red-500' : 'border-gray-300'
@@ -44,7 +64,11 @@ const LanguageSelect: React.FC<Props> = ({ label, name, options }) => {
       </div>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-lg">
+        <div
+          className={`absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg ${
+            openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+          }`}
+        >
           <input
             type="text"
             placeholder="Search..."
@@ -78,7 +102,6 @@ const LanguageSelect: React.FC<Props> = ({ label, name, options }) => {
 };
 
 export default LanguageSelect;
-
 import React from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
